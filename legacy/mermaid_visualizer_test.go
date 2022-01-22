@@ -1,9 +1,11 @@
-package fsm
+package legacy
 
 import (
 	"fmt"
 	"strings"
 	"testing"
+
+	"github.com/maozhixiang/fsm"
 )
 
 func TestMermaidOutput(t *testing.T) {
@@ -17,7 +19,7 @@ func TestMermaidOutput(t *testing.T) {
 		Callbacks{},
 	)
 
-	got, err := VisualizeForMermaidWithGraphType(fsmUnderTest, StateDiagram)
+	got, err := fsmUnderTest.VisualizeWithType(fsm.MermaidStateDiagram)
 	if err != nil {
 		t.Errorf("got error for visualizing with type MERMAID: %s", err)
 	}
@@ -50,7 +52,7 @@ func TestMermaidFlowChartOutput(t *testing.T) {
 		Callbacks{},
 	)
 
-	got, err := VisualizeForMermaidWithGraphType(fsmUnderTest, FlowChart)
+	got, err := fsmUnderTest.VisualizeWithType(fsm.MermaidFlowChart)
 	if err != nil {
 		t.Errorf("got error for visualizing with type MERMAID: %s", err)
 	}

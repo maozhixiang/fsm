@@ -1,49 +1,48 @@
-// +build ignore
-
 package main
 
 import (
 	"fmt"
-	"github.com/looplab/fsm"
+	"strings"
+
+	"github.com/maozhixiang/fsm"
+)
+
+type State int8
+type Event int8
+
+const (
+	closed State = iota
+	openState
+)
+const (
+	open Event = iota
+	close
 )
 
 type Door struct {
-	To  string
-	FSM *fsm.FSM
+	To string
 }
 
-func NewDoor(to string) *Door {
-	d := &Door{
-		To: to,
-	}
+func NewDoor(to string) *Door { return &Door{To: to} }
 
-	d.FSM = fsm.NewFSM(
-		"closed",
-		fsm.Events{
-			{Name: "open", Src: []string{"closed"}, Dst: "open"},
-			{Name: "close", Src: []string{"open"}, Dst: "closed"},
-		},
-		fsm.Callbacks{
-			"enter_state": func(e *fsm.Event) { d.enterState(e) },
-		},
-	)
-
-	return d
+func (d *Door) enterState(e *fsm.Event[State, Event, string]) {
+	fmt.Printf("The door to %v is %v args:%s \n", d.To, e.Dst, strings.Join(e.Args, ","))
 }
 
-func (d *Door) enterState(e *fsm.Event) {
-	fmt.Printf("The door to %s is %s\n", d.To, e.Dst)
-}
+var doorFSM = fsm.NewFSM[State, Event, Door, string](closed, nil).
+	AddTransition(open, []State{closed}, openState).
+	AddTransition(close, []State{openState}, closed).
+	OnEnterAny((*Door).enterState)
 
 func main() {
-	door := NewDoor("heaven")
+	door := doorFSM.NewInstanceWithImpl(NewDoor("homeland"))
 
-	err := door.FSM.Event("open")
+	err := door.Event(open, "args1", "args2")
 	if err != nil {
 		fmt.Println(err)
 	}
 
-	err = door.FSM.Event("close")
+	err = door.Event(close, "args3", "args4", "args5", "args6")
 	if err != nil {
 		fmt.Println(err)
 	}

@@ -1,3 +1,4 @@
+// Copyright (c) 2022 - maozhixiang <mzx@live.cn>
 // Copyright (c) 2013 - Max Persson <max@looplab.se>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package fsm
+package legacy
 
 import (
 	"fmt"
@@ -21,13 +22,6 @@ import (
 	"testing"
 	"time"
 )
-
-type fakeTransitionerObj struct {
-}
-
-func (t fakeTransitionerObj) transition(f *FSM) error {
-	return &InternalError{}
-}
 
 func TestSameState(t *testing.T) {
 	fsm := NewFSM(
@@ -58,21 +52,6 @@ func TestSetState(t *testing.T) {
 	err := fsm.Event("walk")
 	if err != nil {
 		t.Error("transition is expected no error")
-	}
-}
-
-func TestBadTransition(t *testing.T) {
-	fsm := NewFSM(
-		"start",
-		Events{
-			{Name: "run", Src: []string{"start"}, Dst: "running"},
-		},
-		Callbacks{},
-	)
-	fsm.transitionerObj = new(fakeTransitionerObj)
-	err := fsm.Event("run")
-	if err == nil {
-		t.Error("bad transition should give an error")
 	}
 }
 
@@ -384,90 +363,6 @@ func TestCancelWithError(t *testing.T) {
 
 	if fsm.Current() != "start" {
 		t.Error("expected state to be 'start'")
-	}
-}
-
-func TestAsyncTransitionGenericState(t *testing.T) {
-	fsm := NewFSM(
-		"start",
-		Events{
-			{Name: "run", Src: []string{"start"}, Dst: "end"},
-		},
-		Callbacks{
-			"leave_state": func(e *Event) {
-				e.Async()
-			},
-		},
-	)
-	fsm.Event("run")
-	if fsm.Current() != "start" {
-		t.Error("expected state to be 'start'")
-	}
-	fsm.Transition()
-	if fsm.Current() != "end" {
-		t.Error("expected state to be 'end'")
-	}
-}
-
-func TestAsyncTransitionSpecificState(t *testing.T) {
-	fsm := NewFSM(
-		"start",
-		Events{
-			{Name: "run", Src: []string{"start"}, Dst: "end"},
-		},
-		Callbacks{
-			"leave_start": func(e *Event) {
-				e.Async()
-			},
-		},
-	)
-	fsm.Event("run")
-	if fsm.Current() != "start" {
-		t.Error("expected state to be 'start'")
-	}
-	fsm.Transition()
-	if fsm.Current() != "end" {
-		t.Error("expected state to be 'end'")
-	}
-}
-
-func TestAsyncTransitionInProgress(t *testing.T) {
-	fsm := NewFSM(
-		"start",
-		Events{
-			{Name: "run", Src: []string{"start"}, Dst: "end"},
-			{Name: "reset", Src: []string{"end"}, Dst: "start"},
-		},
-		Callbacks{
-			"leave_start": func(e *Event) {
-				e.Async()
-			},
-		},
-	)
-	fsm.Event("run")
-	err := fsm.Event("reset")
-	if e, ok := err.(InTransitionError); !ok && e.Event != "reset" {
-		t.Error("expected 'InTransitionError' with correct state")
-	}
-	fsm.Transition()
-	fsm.Event("reset")
-	if fsm.Current() != "start" {
-		t.Error("expected state to be 'start'")
-	}
-}
-
-func TestAsyncTransitionNotInProgress(t *testing.T) {
-	fsm := NewFSM(
-		"start",
-		Events{
-			{Name: "run", Src: []string{"start"}, Dst: "end"},
-			{Name: "reset", Src: []string{"end"}, Dst: "start"},
-		},
-		Callbacks{},
-	)
-	err := fsm.Transition()
-	if _, ok := err.(NotInTransitionError); !ok {
-		t.Error("expected 'NotInTransitionError'")
 	}
 }
 
@@ -804,32 +699,4 @@ func ExampleFSM_Event() {
 	// closed
 	// open
 	// closed
-}
-
-func ExampleFSM_Transition() {
-	fsm := NewFSM(
-		"closed",
-		Events{
-			{Name: "open", Src: []string{"closed"}, Dst: "open"},
-			{Name: "close", Src: []string{"open"}, Dst: "closed"},
-		},
-		Callbacks{
-			"leave_closed": func(e *Event) {
-				e.Async()
-			},
-		},
-	)
-	err := fsm.Event("open")
-	if e, ok := err.(AsyncError); !ok && e.Err != nil {
-		fmt.Println(err)
-	}
-	fmt.Println(fsm.Current())
-	err = fsm.Transition()
-	if err != nil {
-		fmt.Println(err)
-	}
-	fmt.Println(fsm.Current())
-	// Output:
-	// closed
-	// open
 }

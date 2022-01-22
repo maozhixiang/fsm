@@ -1,10 +1,9 @@
-// +build ignore
-
 package main
 
 import (
 	"fmt"
-	"github.com/looplab/fsm"
+
+	fsm "github.com/maozhixiang/fsm/legacy"
 )
 
 func main() {

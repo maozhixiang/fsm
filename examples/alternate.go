@@ -1,14 +1,17 @@
+//go:build ignore
 // +build ignore
 
 package main
 
 import (
 	"fmt"
-	"github.com/looplab/fsm"
+
+	fsm "github.com/maozhixiang/fsm/legacy"
 )
 
 func main() {
-	fsm := fsm.NewFSM(
+	var f *fsm.FSM
+	f = fsm.NewFSM(
 		"idle",
 		fsm.Events{
 			{Name: "scan", Src: []string{"idle"}, Dst: "scanning"},
@@ -19,48 +22,48 @@ func main() {
 		},
 		fsm.Callbacks{
 			"scan": func(e *fsm.Event) {
-				fmt.Println("after_scan: " + e.FSM.Current())
+				fmt.Println("after_scan: " + f.Current())
 			},
 			"working": func(e *fsm.Event) {
-				fmt.Println("working: " + e.FSM.Current())
+				fmt.Println("working: " + f.Current())
 			},
 			"situation": func(e *fsm.Event) {
-				fmt.Println("situation: " + e.FSM.Current())
+				fmt.Println("situation: " + f.Current())
 			},
 			"finish": func(e *fsm.Event) {
-				fmt.Println("finish: " + e.FSM.Current())
+				fmt.Println("finish: " + f.Current())
 			},
 		},
 	)
 
-	fmt.Println(fsm.Current())
+	fmt.Println(f.Current())
 
-	err := fsm.Event("scan")
+	err := f.Event("scan")
 	if err != nil {
 		fmt.Println(err)
 	}
 
-	fmt.Println("1:" + fsm.Current())
+	fmt.Println("1:" + f.Current())
 
-	err = fsm.Event("working")
+	err = f.Event("working")
 	if err != nil {
 		fmt.Println(err)
 	}
 
-	fmt.Println("2:" + fsm.Current())
+	fmt.Println("2:" + f.Current())
 
-	err = fsm.Event("situation")
+	err = f.Event("situation")
 	if err != nil {
 		fmt.Println(err)
 	}
 
-	fmt.Println("3:" + fsm.Current())
+	fmt.Println("3:" + f.Current())
 
-	err = fsm.Event("finish")
+	err = f.Event("finish")
 	if err != nil {
 		fmt.Println(err)
 	}
 
-	fmt.Println("4:" + fsm.Current())
+	fmt.Println("4:" + f.Current())
 
 }

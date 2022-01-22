@@ -1,3 +1,4 @@
+// Copyright (c) 2022 - maozhixiang <mzx@live.cn>
 // Copyright (c) 2013 - Max Persson <max@looplab.se>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,11 +13,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package fsm
+package legacy
 
 import (
 	"errors"
 	"testing"
+
+	"github.com/maozhixiang/fsm"
 )
 
 func TestInvalidEventError(t *testing.T) {
@@ -52,7 +55,7 @@ func TestNotInTransitionError(t *testing.T) {
 }
 
 func TestNoTransitionError(t *testing.T) {
-	e := NoTransitionError{}
+	e := fsm.NoTransitionError{}
 	if e.Error() != "no transition" {
 		t.Error("NoTransitionError string mismatch")
 	}
@@ -63,7 +66,7 @@ func TestNoTransitionError(t *testing.T) {
 }
 
 func TestCanceledError(t *testing.T) {
-	e := CanceledError{}
+	e := fsm.CanceledError{}
 	if e.Error() != "transition canceled" {
 		t.Error("CanceledError string mismatch")
 	}
@@ -73,19 +76,8 @@ func TestCanceledError(t *testing.T) {
 	}
 }
 
-func TestAsyncError(t *testing.T) {
-	e := AsyncError{}
-	if e.Error() != "async started" {
-		t.Error("AsyncError string mismatch")
-	}
-	e.Err = errors.New("async")
-	if e.Error() != "async started with error: "+e.Err.Error() {
-		t.Error("AsyncError string mismatch")
-	}
-}
-
 func TestInternalError(t *testing.T) {
-	e := InternalError{}
+	e := fsm.InternalError{}
 	if e.Error() != "internal error on state transition" {
 		t.Error("InternalError string mismatch")
 	}

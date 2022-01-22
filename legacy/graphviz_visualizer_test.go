@@ -1,9 +1,11 @@
-package fsm
+package legacy
 
 import (
 	"fmt"
 	"strings"
 	"testing"
+
+	"github.com/maozhixiang/fsm"
 )
 
 func TestGraphvizOutput(t *testing.T) {
@@ -17,7 +19,7 @@ func TestGraphvizOutput(t *testing.T) {
 		Callbacks{},
 	)
 
-	got := Visualize(fsmUnderTest)
+	got, _ := fsmUnderTest.VisualizeWithType(fsm.GRAPHVIZ)
 	wanted := `
 digraph fsm {
     "closed" -> "open" [ label = "open" ];

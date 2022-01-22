@@ -1,3 +1,4 @@
+//go:build ignore
 // +build ignore
 
 package main
@@ -5,11 +6,12 @@ package main
 import (
 	"fmt"
 
-	"github.com/looplab/fsm"
+	fsm "github.com/maozhixiang/fsm/legacy"
 )
 
 func main() {
-	fsm := fsm.NewFSM(
+	var f *fsm.FSM
+	f = fsm.NewFSM(
 		"idle",
 		fsm.Events{
 			{Name: "produce", Src: []string{"idle"}, Dst: "idle"},
@@ -17,11 +19,11 @@ func main() {
 		},
 		fsm.Callbacks{
 			"produce": func(e *fsm.Event) {
-				e.FSM.SetMetadata("message", "hii")
+				f.Self.SetMetadata("message", "hii")
 				fmt.Println("produced data")
 			},
 			"consume": func(e *fsm.Event) {
-				message, ok := e.FSM.Metadata("message")
+				message, ok := f.Self.Metadata("message")
 				if ok {
 					fmt.Println("message = " + message.(string))
 				}
@@ -30,20 +32,20 @@ func main() {
 		},
 	)
 
-	fmt.Println(fsm.Current())
+	fmt.Println(f.Current())
 
-	err := fsm.Event("produce")
+	err := f.Event("produce")
 	if err != nil {
 		fmt.Println(err)
 	}
 
-	fmt.Println(fsm.Current())
+	fmt.Println(f.Current())
 
-	err = fsm.Event("consume")
+	err = f.Event("consume")
 	if err != nil {
 		fmt.Println(err)
 	}
 
-	fmt.Println(fsm.Current())
+	fmt.Println(f.Current())
 
 }

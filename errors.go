@@ -1,3 +1,4 @@
+// Copyright (c) 2022 - maozhixiang <mzx@live.cn>
 // Copyright (c) 2013 - Max Persson <max@looplab.se>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,34 +15,36 @@
 
 package fsm
 
+import "fmt"
+
 // InvalidEventError is returned by FSM.Event() when the event cannot be called
 // in the current state.
-type InvalidEventError struct {
-	Event string
-	State string
+type InvalidEventError[STATE, EVENT comparable] struct {
+	Event EVENT
+	State STATE
 }
 
-func (e InvalidEventError) Error() string {
-	return "event " + e.Event + " inappropriate in current state " + e.State
+func (e InvalidEventError[STATE, EVENT]) Error() string {
+	return fmt.Sprintf("event %v inappropriate in current state %v", e.Event, e.State)
 }
 
 // UnknownEventError is returned by FSM.Event() when the event is not defined.
-type UnknownEventError struct {
-	Event string
+type UnknownEventError[EVENT comparable] struct {
+	Event EVENT
 }
 
-func (e UnknownEventError) Error() string {
-	return "event " + e.Event + " does not exist"
+func (e UnknownEventError[EVENT]) Error() string {
+	return fmt.Sprintf("event %v does not exist", e.Event)
 }
 
 // InTransitionError is returned by FSM.Event() when an asynchronous transition
 // is already in progress.
-type InTransitionError struct {
-	Event string
+type InTransitionError[EVENT comparable] struct {
+	Event EVENT
 }
 
-func (e InTransitionError) Error() string {
-	return "event " + e.Event + " inappropriate because previous transition did not complete"
+func (e InTransitionError[EVENT]) Error() string {
+	return fmt.Sprintf("event %v inappropriate because previous transition did not complete", e.Event)
 }
 
 // NotInTransitionError is returned by FSM.Transition() when an asynchronous
@@ -76,19 +79,6 @@ func (e CanceledError) Error() string {
 		return "transition canceled with error: " + e.Err.Error()
 	}
 	return "transition canceled"
-}
-
-// AsyncError is returned by FSM.Event() when a callback have initiated an
-// asynchronous state transition.
-type AsyncError struct {
-	Err error
-}
-
-func (e AsyncError) Error() string {
-	if e.Err != nil {
-		return "async started with error: " + e.Err.Error()
-	}
-	return "async started"
 }
 
 // InternalError is returned by FSM.Event() and should never occur. It is a

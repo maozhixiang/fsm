@@ -1,19 +1,14 @@
-[![PkgGoDev](https://pkg.go.dev/badge/github.com/looplab/fsm)](https://pkg.go.dev/github.com/looplab/fsm)
-![Bulid Status](https://github.com/looplab/fsm/actions/workflows/main.yml/badge.svg)
-[![Coverage Status](https://img.shields.io/coveralls/looplab/fsm.svg)](https://coveralls.io/r/looplab/fsm)
-[![Go Report Card](https://goreportcard.com/badge/looplab/fsm)](https://goreportcard.com/report/looplab/fsm)
-
 # FSM for Go
 
 FSM is a finite state machine for Go.
 
-It is heavily based on two FSM implementations:
+Forked from github.com/looplab/fsm.
 
-- Javascript Finite State Machine, https://github.com/jakesgordon/javascript-state-machine
-
-- Fysom for Python, https://github.com/oxplot/fysom (forked at https://github.com/mriehl/fysom)
-
-For API docs and examples see http://godoc.org/github.com/looplab/fsm
+Different from the previous implementation:  
+- for better memory allocation, instances created from one FSM model will share the definition of transition and callback
+- using type parameters for state, event, fsm_struct and event_arg. (requiring go 1.18).
+- a 'legacy' package is provided for previous implementation and test
+- no longer provide metadata or asynchronous state transition, witch can be implemented in custom FSM struct
 
 # Basic Example
 
@@ -24,7 +19,8 @@ package main
 
 import (
     "fmt"
-    "github.com/looplab/fsm"
+
+    fsm "github.com/maozhixiang/fsm/legacy"
 )
 
 func main() {
@@ -64,46 +60,47 @@ package main
 
 import (
     "fmt"
-    "github.com/looplab/fsm"
+    "strings"
+
+    "github.com/maozhixiang/fsm"
+)
+
+type State int8
+type Event int8
+
+const (
+    closed State = iota
+    openState
+)
+const (
+    open Event = iota
+    close
 )
 
 type Door struct {
-    To  string
-    FSM *fsm.FSM
+    To string
 }
 
-func NewDoor(to string) *Door {
-    d := &Door{
-        To: to,
-    }
+func NewDoor(to string) *Door { return &Door{To: to} }
 
-    d.FSM = fsm.NewFSM(
-        "closed",
-        fsm.Events{
-            {Name: "open", Src: []string{"closed"}, Dst: "open"},
-            {Name: "close", Src: []string{"open"}, Dst: "closed"},
-        },
-        fsm.Callbacks{
-            "enter_state": func(e *fsm.Event) { d.enterState(e) },
-        },
-    )
-
-    return d
+func (d *Door) enterState(e *fsm.Event[State, Event, string]) {
+    fmt.Printf("The door to %v is %v args:%s \n", d.To, e.Dst, strings.Join(e.Args, ","))
 }
 
-func (d *Door) enterState(e *fsm.Event) {
-    fmt.Printf("The door to %s is %s\n", d.To, e.Dst)
-}
+var doorFSM = fsm.NewFSM[State, Event, Door, string](closed, nil).
+    AddTransition(open, []State{closed}, openState).
+    AddTransition(close, []State{openState}, closed).
+    OnEnterAny((*Door).enterState)
 
 func main() {
-    door := NewDoor("heaven")
+    door := doorFSM.NewInstanceWithImpl(NewDoor("homeland"))
 
-    err := door.FSM.Event("open")
+    err := door.Event(open, "args1", "args2")
     if err != nil {
         fmt.Println(err)
     }
 
-    err = door.FSM.Event("close")
+    err = door.Event(close, "args3", "args4", "args5", "args6")
     if err != nil {
         fmt.Println(err)
     }

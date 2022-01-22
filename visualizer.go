@@ -21,41 +21,44 @@ const (
 
 // VisualizeWithType outputs a visualization of a FSM in the desired format.
 // If the type is not given it defaults to GRAPHVIZ
-func VisualizeWithType(fsm *FSM, visualizeType VisualizeType) (string, error) {
+func (fsm *FSM[STATE, EVENT, FSM_IMPL, ARG]) VisualizeWithType(visualizeType VisualizeType, current STATE) (string, error) {
 	switch visualizeType {
 	case GRAPHVIZ:
-		return Visualize(fsm), nil
-	case MERMAID:
-		return VisualizeForMermaidWithGraphType(fsm, StateDiagram)
-	case MermaidStateDiagram:
-		return VisualizeForMermaidWithGraphType(fsm, StateDiagram)
+		return fsm.Visualize(current), nil
+	case MERMAID, MermaidStateDiagram:
+		return fsm.VisualizeForMermaidWithGraphType(StateDiagram, current)
 	case MermaidFlowChart:
-		return VisualizeForMermaidWithGraphType(fsm, FlowChart)
+		return fsm.VisualizeForMermaidWithGraphType(FlowChart, current)
 	default:
 		return "", fmt.Errorf("unknown VisualizeType: %s", visualizeType)
 	}
 }
 
-func getSortedTransitionKeys(transitions map[eKey]string) []eKey {
-	// we sort the key alphabetically to have a reproducible graph output
-	sortedTransitionKeys := make([]eKey, 0)
+func (fsm *Instance[STATE, EVENT, FSM_IMPL, ARG]) VisualizeWithType(visualizeType VisualizeType) (string, error) {
+	return fsm.FSM.VisualizeWithType(visualizeType, fsm.Current())
+}
 
-	for transition := range transitions {
+func (fsm *FSM[STATE, EVENT, FSM_IMPL, ARG]) getSortedTransitionKeys() []eKey[STATE, EVENT] {
+	// we sort the key alphabetically to have a reproducible graph output
+	sortedTransitionKeys := make([]eKey[STATE, EVENT], 0)
+
+	for transition := range fsm.transitions {
 		sortedTransitionKeys = append(sortedTransitionKeys, transition)
 	}
+
 	sort.Slice(sortedTransitionKeys, func(i, j int) bool {
 		if sortedTransitionKeys[i].src == sortedTransitionKeys[j].src {
-			return sortedTransitionKeys[i].event < sortedTransitionKeys[j].event
+			return fmt.Sprint(sortedTransitionKeys[i].event) < fmt.Sprint(sortedTransitionKeys[j].event)
 		}
-		return sortedTransitionKeys[i].src < sortedTransitionKeys[j].src
+		return fmt.Sprint(sortedTransitionKeys[i].src) < fmt.Sprint(sortedTransitionKeys[j].src)
 	})
 
 	return sortedTransitionKeys
 }
 
-func getSortedStates(transitions map[eKey]string) ([]string, map[string]string) {
-	statesToIDMap := make(map[string]string)
-	for transition, target := range transitions {
+func (fsm *FSM[STATE, EVENT, FSM_IMPL, ARG]) getSortedStates() ([]STATE, map[STATE]string) {
+	statesToIDMap := make(map[STATE]string)
+	for transition, target := range fsm.transitions {
 		if _, ok := statesToIDMap[transition.src]; !ok {
 			statesToIDMap[transition.src] = ""
 		}
@@ -64,11 +67,13 @@ func getSortedStates(transitions map[eKey]string) ([]string, map[string]string) 
 		}
 	}
 
-	sortedStates := make([]string, 0, len(statesToIDMap))
+	sortedStates := make([]STATE, 0, len(statesToIDMap))
 	for state := range statesToIDMap {
 		sortedStates = append(sortedStates, state)
 	}
-	sort.Strings(sortedStates)
+	sort.Slice(sortedStates, func(i, j int) bool {
+		return fmt.Sprint(sortedStates[i]) < fmt.Sprint(sortedStates[j])
+	})
 
 	for i, state := range sortedStates {
 		statesToIDMap[state] = fmt.Sprintf("id%d", i)
